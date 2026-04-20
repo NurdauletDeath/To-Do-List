@@ -1,3 +1,5 @@
+const STORAGE_KEY = "todo-task-manager-state-v1";
+
 const state = {
   tasks: [],
   filter: "all",
@@ -11,6 +13,7 @@ const filterButtons = document.querySelectorAll(".filter-button");
 const clearCompletedButton = document.querySelector("#clear-completed");
 
 if (taskForm && taskInput && taskList && taskFilters) {
+  hydrateStateFromStorage();
   taskForm.addEventListener("submit", handleTaskSubmit);
   taskList.addEventListener("change", handleTaskToggle);
   taskList.addEventListener("click", handleTaskDelete);
@@ -32,6 +35,7 @@ function handleTaskSubmit(event) {
 
   const newTask = createTask(rawValue);
   state.tasks.push(newTask);
+  persistStateToStorage();
 
   taskInput.value = "";
   taskInput.focus();
@@ -40,7 +44,7 @@ function handleTaskSubmit(event) {
 
 function createTask(title) {
   return {
-    id: Date.now().toString(),
+    id: createTaskId(),
     title,
     completed: false,
   };
@@ -124,6 +128,7 @@ function handleTaskToggle(event) {
   }
 
   targetTask.completed = changedElement.checked;
+  persistStateToStorage();
   renderTasks();
 }
 
@@ -144,6 +149,7 @@ function handleTaskDelete(event) {
   }
 
   state.tasks = state.tasks.filter((task) => task.id !== taskId);
+  persistStateToStorage();
   renderTasks();
 }
 
@@ -154,6 +160,7 @@ function handleClearCompleted() {
   }
 
   state.tasks = state.tasks.filter((task) => !task.completed);
+  persistStateToStorage();
   renderTasks();
 }
 
@@ -174,6 +181,7 @@ function handleFilterChange(event) {
   }
 
   state.filter = nextFilter;
+  persistStateToStorage();
   updateFilterButtons();
   renderTasks();
 }
@@ -229,4 +237,77 @@ function getCompletedTaskCount() {
 
 function isSupportedFilter(value) {
   return value === "all" || value === "active" || value === "completed";
+}
+
+function createTaskId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function hydrateStateFromStorage() {
+  try {
+    const rawStoredState = localStorage.getItem(STORAGE_KEY);
+    if (!rawStoredState) {
+      return;
+    }
+
+    const parsedState = JSON.parse(rawStoredState);
+    if (!parsedState || typeof parsedState !== "object") {
+      return;
+    }
+
+    state.tasks = sanitizeStoredTasks(parsedState.tasks);
+    if (isSupportedFilter(parsedState.filter)) {
+      state.filter = parsedState.filter;
+    }
+  } catch (error) {
+    console.warn("Unable to load todo state from localStorage.", error);
+  }
+}
+
+function persistStateToStorage() {
+  const stateToStore = {
+    tasks: state.tasks,
+    filter: state.filter,
+  };
+
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToStore));
+  } catch (error) {
+    console.warn("Unable to save todo state to localStorage.", error);
+  }
+}
+
+function sanitizeStoredTasks(rawTasks) {
+  if (!Array.isArray(rawTasks)) {
+    return [];
+  }
+
+  return rawTasks
+    .map(normalizeStoredTask)
+    .filter((task) => task !== null);
+}
+
+function normalizeStoredTask(rawTask) {
+  if (!rawTask || typeof rawTask !== "object") {
+    return null;
+  }
+
+  const title = typeof rawTask.title === "string" ? rawTask.title.trim() : "";
+  if (!title) {
+    return null;
+  }
+
+  const id = typeof rawTask.id === "string" && rawTask.id
+    ? rawTask.id
+    : createTaskId();
+
+  return {
+    id,
+    title,
+    completed: Boolean(rawTask.completed),
+  };
 }
