@@ -56,3 +56,19 @@ h1 {
   list-style: none;
   min-height: 20px;
 }
+
+.task-item {
+  padding: 10px 12px;
+  border: 1px solid #d9d9d9;
+  background: #fafafa;
+}
+
+.task-item + .task-item {
+  margin-top: 8px;
+}
+
+.task-empty {
+  padding: 10px 12px;
+  color: #666;
+  border: 1px dashed #c7c7c7;
+}
