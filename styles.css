@@ -58,6 +58,10 @@ h1 {
 }
 
 .task-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 10px 12px;
   border: 1px solid #d9d9d9;
   background: #fafafa;
@@ -75,6 +79,18 @@ h1 {
 
 .task-title {
   word-break: break-word;
+}
+
+.task-delete {
+  padding: 6px 10px;
+  border: 1px solid #c9c9c9;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+}
+
+.task-delete:hover {
+  background: #f2f2f2;
 }
 
 .task-item + .task-item {

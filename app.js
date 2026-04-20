@@ -10,6 +10,7 @@ const taskList = document.querySelector("#task-list");
 if (taskForm && taskInput && taskList) {
   taskForm.addEventListener("submit", handleTaskSubmit);
   taskList.addEventListener("change", handleTaskToggle);
+  taskList.addEventListener("click", handleTaskDelete);
   renderTasks();
 }
 
@@ -80,7 +81,15 @@ function createTaskListItem(task) {
   taskTitle.textContent = task.title;
 
   taskLabel.append(taskToggle, taskTitle);
-  taskItem.append(taskLabel);
+
+  const deleteButton = document.createElement("button");
+  deleteButton.type = "button";
+  deleteButton.className = "task-delete";
+  deleteButton.dataset.taskId = task.id;
+  deleteButton.setAttribute("aria-label", `Delete task "${task.title}"`);
+  deleteButton.textContent = "Delete";
+
+  taskItem.append(taskLabel, deleteButton);
   return taskItem;
 }
 
@@ -105,5 +114,25 @@ function handleTaskToggle(event) {
   }
 
   targetTask.completed = changedElement.checked;
+  renderTasks();
+}
+
+function handleTaskDelete(event) {
+  const clickedElement = event.target;
+  if (!(clickedElement instanceof HTMLElement)) {
+    return;
+  }
+
+  const deleteButton = clickedElement.closest(".task-delete");
+  if (!(deleteButton instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  const taskId = deleteButton.dataset.taskId;
+  if (!taskId) {
+    return;
+  }
+
+  state.tasks = state.tasks.filter((task) => task.id !== taskId);
   renderTasks();
 }
