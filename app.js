@@ -23,5 +23,14 @@ function handleTaskSubmit(event) {
     return;
   }
 
-  console.log("Task submit captured:", rawValue);
+  const newTask = createTask(rawValue);
+  console.log("Task object created:", newTask);
+}
+
+function createTask(title) {
+  return {
+    id: Date.now().toString(),
+    title,
+    completed: false,
+  };
 }
