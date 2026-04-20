@@ -10,8 +10,16 @@
 <body>
   <main class="app">
     <h1>ToDo Task Manager</h1>
-    <p>Step 1: project skeleton only.</p>
-    <section id="todo-app" aria-label="Todo app container"></section>
+    <p>Add your tasks and manage them step by step.</p>
+    <section id="todo-app" aria-label="Todo app container">
+      <form id="task-form" class="task-form" autocomplete="off">
+        <label for="task-input">New task</label>
+        <div class="task-form-row">
+          <input id="task-input" name="task" type="text" placeholder="Write a task..." />
+          <button type="submit">Add</button>
+        </div>
+      </form>
+    </section>
   </main>
 </body>
 </html>
