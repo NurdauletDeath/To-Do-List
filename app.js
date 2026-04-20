@@ -6,11 +6,15 @@ const state = {
 const taskForm = document.querySelector("#task-form");
 const taskInput = document.querySelector("#task-input");
 const taskList = document.querySelector("#task-list");
+const taskFilters = document.querySelector("#task-filters");
+const filterButtons = document.querySelectorAll(".filter-button");
 
-if (taskForm && taskInput && taskList) {
+if (taskForm && taskInput && taskList && taskFilters) {
   taskForm.addEventListener("submit", handleTaskSubmit);
   taskList.addEventListener("change", handleTaskToggle);
   taskList.addEventListener("click", handleTaskDelete);
+  taskFilters.addEventListener("click", handleFilterChange);
+  updateFilterButtons();
   renderTasks();
 }
 
@@ -40,18 +44,19 @@ function createTask(title) {
 
 function renderTasks() {
   taskList.innerHTML = "";
+  const visibleTasks = getVisibleTasks();
 
-  if (state.tasks.length === 0) {
+  if (visibleTasks.length === 0) {
     const emptyItem = document.createElement("li");
     emptyItem.className = "task-empty";
-    emptyItem.textContent = "No tasks yet. Add your first task.";
+    emptyItem.textContent = getEmptyStateText();
     taskList.append(emptyItem);
     return;
   }
 
   const listFragment = document.createDocumentFragment();
 
-  state.tasks.forEach((task) => {
+  visibleTasks.forEach((task) => {
     listFragment.append(createTaskListItem(task));
   });
 
@@ -135,4 +140,60 @@ function handleTaskDelete(event) {
 
   state.tasks = state.tasks.filter((task) => task.id !== taskId);
   renderTasks();
+}
+
+function handleFilterChange(event) {
+  const clickedElement = event.target;
+  if (!(clickedElement instanceof HTMLElement)) {
+    return;
+  }
+
+  const filterButton = clickedElement.closest(".filter-button");
+  if (!(filterButton instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  const nextFilter = filterButton.dataset.filter;
+  if (!isSupportedFilter(nextFilter)) {
+    return;
+  }
+
+  state.filter = nextFilter;
+  updateFilterButtons();
+  renderTasks();
+}
+
+function getVisibleTasks() {
+  if (state.filter === "active") {
+    return state.tasks.filter((task) => !task.completed);
+  }
+
+  if (state.filter === "completed") {
+    return state.tasks.filter((task) => task.completed);
+  }
+
+  return state.tasks;
+}
+
+function getEmptyStateText() {
+  if (state.filter === "active") {
+    return "No active tasks.";
+  }
+
+  if (state.filter === "completed") {
+    return "No completed tasks.";
+  }
+
+  return "No tasks yet. Add your first task.";
+}
+
+function updateFilterButtons() {
+  filterButtons.forEach((button) => {
+    const isCurrent = button.dataset.filter === state.filter;
+    button.classList.toggle("is-active", isCurrent);
+  });
+}
+
+function isSupportedFilter(value) {
+  return value === "all" || value === "active" || value === "completed";
 }

@@ -50,6 +50,30 @@ h1 {
   cursor: pointer;
 }
 
+.task-filters {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.filter-button {
+  padding: 6px 10px;
+  border: 1px solid #c9c9c9;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+}
+
+.filter-button:hover {
+  background: #f2f2f2;
+}
+
+.filter-button.is-active {
+  border-color: #333;
+  background: #333;
+  color: #fff;
+}
+
 .task-list {
   margin: 14px 0 0;
   padding: 0;

@@ -19,6 +19,11 @@
           <button type="submit">Add</button>
         </div>
       </form>
+      <div id="task-filters" class="task-filters" aria-label="Task filters">
+        <button type="button" class="filter-button is-active" data-filter="all">All</button>
+        <button type="button" class="filter-button" data-filter="active">Active</button>
+        <button type="button" class="filter-button" data-filter="completed">Completed</button>
+      </div>
       <ul id="task-list" class="task-list" aria-live="polite"></ul>
     </section>
   </main>
