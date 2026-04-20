@@ -11,12 +11,19 @@ const taskList = document.querySelector("#task-list");
 const taskFilters = document.querySelector("#task-filters");
 const filterButtons = document.querySelectorAll(".filter-button");
 const clearCompletedButton = document.querySelector("#clear-completed");
+const dragState = {
+  draggedTaskId: null,
+};
 
 if (taskForm && taskInput && taskList && taskFilters) {
   hydrateStateFromStorage();
   taskForm.addEventListener("submit", handleTaskSubmit);
   taskList.addEventListener("change", handleTaskToggle);
   taskList.addEventListener("click", handleTaskDelete);
+  taskList.addEventListener("dragstart", handleTaskDragStart);
+  taskList.addEventListener("dragover", handleTaskDragOver);
+  taskList.addEventListener("drop", handleTaskDrop);
+  taskList.addEventListener("dragend", handleTaskDragEnd);
   taskFilters.addEventListener("click", handleFilterChange);
   if (clearCompletedButton) {
     clearCompletedButton.addEventListener("click", handleClearCompleted);
@@ -75,6 +82,11 @@ function renderTasks() {
 function createTaskListItem(task) {
   const taskItem = document.createElement("li");
   taskItem.className = "task-item";
+  if (isDragEnabled()) {
+    taskItem.classList.add("task-item-draggable");
+    taskItem.draggable = true;
+  }
+
   if (task.completed) {
     taskItem.classList.add("task-item-completed");
   }
@@ -164,6 +176,99 @@ function handleClearCompleted() {
   renderTasks();
 }
 
+function handleTaskDragStart(event) {
+  if (!isDragEnabled()) {
+    event.preventDefault();
+    return;
+  }
+
+  const draggedItem = getClosestTaskItem(event.target);
+  if (!draggedItem) {
+    event.preventDefault();
+    return;
+  }
+
+  const taskId = draggedItem.dataset.taskId;
+  if (!taskId) {
+    event.preventDefault();
+    return;
+  }
+
+  dragState.draggedTaskId = taskId;
+  draggedItem.classList.add("task-item-dragging");
+
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", taskId);
+  }
+}
+
+function handleTaskDragOver(event) {
+  if (!isDragEnabled() || !dragState.draggedTaskId) {
+    return;
+  }
+
+  event.preventDefault();
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = "move";
+  }
+
+  const overItem = getClosestTaskItem(event.target);
+  clearDropTargetClass();
+
+  if (!overItem) {
+    return;
+  }
+
+  const overTaskId = overItem.dataset.taskId;
+  if (!overTaskId || overTaskId === dragState.draggedTaskId) {
+    return;
+  }
+
+  overItem.classList.add("task-item-drop-target");
+}
+
+function handleTaskDrop(event) {
+  if (!isDragEnabled()) {
+    return;
+  }
+
+  event.preventDefault();
+  const draggedTaskId = getDraggedTaskId(event);
+  if (!draggedTaskId) {
+    clearDragState();
+    return;
+  }
+
+  const droppedOnItem = getClosestTaskItem(event.target);
+  if (droppedOnItem && droppedOnItem.dataset.taskId === draggedTaskId) {
+    clearDragState();
+    return;
+  }
+
+  const dropTargetTaskId = droppedOnItem ? droppedOnItem.dataset.taskId || null : null;
+  let didReorder = false;
+
+  if (dropTargetTaskId) {
+    didReorder = moveTaskBefore(draggedTaskId, dropTargetTaskId);
+  } else {
+    didReorder = moveTaskToEnd(draggedTaskId);
+  }
+
+  clearDragState();
+
+  if (!didReorder) {
+    return;
+  }
+
+  persistStateToStorage();
+  renderTasks();
+}
+
+function handleTaskDragEnd() {
+  clearDragState();
+}
+
 function handleFilterChange(event) {
   const clickedElement = event.target;
   if (!(clickedElement instanceof HTMLElement)) {
@@ -233,6 +338,10 @@ function getCompletedTaskCount() {
   return state.tasks.reduce((count, task) => {
     return task.completed ? count + 1 : count;
   }, 0);
+}
+
+function isDragEnabled() {
+  return state.filter === "all";
 }
 
 function isSupportedFilter(value) {
@@ -310,4 +419,75 @@ function normalizeStoredTask(rawTask) {
     title,
     completed: Boolean(rawTask.completed),
   };
+}
+
+function getClosestTaskItem(target) {
+  if (!(target instanceof HTMLElement)) {
+    return null;
+  }
+
+  const taskItem = target.closest(".task-item");
+  if (!(taskItem instanceof HTMLLIElement)) {
+    return null;
+  }
+
+  return taskItem;
+}
+
+function getDraggedTaskId(event) {
+  if (dragState.draggedTaskId) {
+    return dragState.draggedTaskId;
+  }
+
+  if (!event.dataTransfer) {
+    return null;
+  }
+
+  const transferredId = event.dataTransfer.getData("text/plain");
+  return transferredId || null;
+}
+
+function moveTaskBefore(draggedTaskId, targetTaskId) {
+  if (draggedTaskId === targetTaskId) {
+    return false;
+  }
+
+  const fromIndex = state.tasks.findIndex((task) => task.id === draggedTaskId);
+  const toIndex = state.tasks.findIndex((task) => task.id === targetTaskId);
+  if (fromIndex < 0 || toIndex < 0) {
+    return false;
+  }
+
+  const [movedTask] = state.tasks.splice(fromIndex, 1);
+  const adjustedIndex = fromIndex < toIndex ? toIndex - 1 : toIndex;
+  state.tasks.splice(adjustedIndex, 0, movedTask);
+  return true;
+}
+
+function moveTaskToEnd(draggedTaskId) {
+  const fromIndex = state.tasks.findIndex((task) => task.id === draggedTaskId);
+  if (fromIndex < 0 || fromIndex === state.tasks.length - 1) {
+    return false;
+  }
+
+  const [movedTask] = state.tasks.splice(fromIndex, 1);
+  state.tasks.push(movedTask);
+  return true;
+}
+
+function clearDragState() {
+  dragState.draggedTaskId = null;
+
+  clearDropTargetClass();
+  const draggingItem = taskList.querySelector(".task-item-dragging");
+  if (draggingItem) {
+    draggingItem.classList.remove("task-item-dragging");
+  }
+}
+
+function clearDropTargetClass() {
+  const dropTarget = taskList.querySelector(".task-item-drop-target");
+  if (dropTarget) {
+    dropTarget.classList.remove("task-item-drop-target");
+  }
 }

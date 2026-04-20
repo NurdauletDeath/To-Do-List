@@ -116,6 +116,20 @@ h1 {
   background: #fafafa;
 }
 
+.task-item-draggable {
+  cursor: grab;
+}
+
+.task-item-dragging {
+  opacity: 0.45;
+  cursor: grabbing;
+}
+
+.task-item-drop-target {
+  border-color: #1f6feb;
+  background: #eef5ff;
+}
+
 .task-item-main {
   display: flex;
   align-items: center;
