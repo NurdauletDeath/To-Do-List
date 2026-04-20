@@ -63,8 +63,27 @@ h1 {
   background: #fafafa;
 }
 
+.task-item-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.task-toggle {
+  margin: 0;
+}
+
+.task-title {
+  word-break: break-word;
+}
+
 .task-item + .task-item {
   margin-top: 8px;
+}
+
+.task-item-completed .task-title {
+  color: #777;
+  text-decoration: line-through;
 }
 
 .task-empty {

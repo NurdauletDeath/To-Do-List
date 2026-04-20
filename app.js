@@ -9,6 +9,7 @@ const taskList = document.querySelector("#task-list");
 
 if (taskForm && taskInput && taskList) {
   taskForm.addEventListener("submit", handleTaskSubmit);
+  taskList.addEventListener("change", handleTaskToggle);
   renderTasks();
 }
 
@@ -59,7 +60,50 @@ function renderTasks() {
 function createTaskListItem(task) {
   const taskItem = document.createElement("li");
   taskItem.className = "task-item";
+  if (task.completed) {
+    taskItem.classList.add("task-item-completed");
+  }
   taskItem.dataset.taskId = task.id;
-  taskItem.textContent = task.title;
+
+  const taskLabel = document.createElement("label");
+  taskLabel.className = "task-item-main";
+
+  const taskToggle = document.createElement("input");
+  taskToggle.type = "checkbox";
+  taskToggle.className = "task-toggle";
+  taskToggle.checked = task.completed;
+  taskToggle.dataset.taskId = task.id;
+  taskToggle.setAttribute("aria-label", `Mark "${task.title}" as completed`);
+
+  const taskTitle = document.createElement("span");
+  taskTitle.className = "task-title";
+  taskTitle.textContent = task.title;
+
+  taskLabel.append(taskToggle, taskTitle);
+  taskItem.append(taskLabel);
   return taskItem;
+}
+
+function handleTaskToggle(event) {
+  const changedElement = event.target;
+  if (!(changedElement instanceof HTMLInputElement)) {
+    return;
+  }
+
+  if (!changedElement.classList.contains("task-toggle")) {
+    return;
+  }
+
+  const taskId = changedElement.dataset.taskId;
+  if (!taskId) {
+    return;
+  }
+
+  const targetTask = state.tasks.find((task) => task.id === taskId);
+  if (!targetTask) {
+    return;
+  }
+
+  targetTask.completed = changedElement.checked;
+  renderTasks();
 }
