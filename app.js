@@ -8,12 +8,16 @@ const taskInput = document.querySelector("#task-input");
 const taskList = document.querySelector("#task-list");
 const taskFilters = document.querySelector("#task-filters");
 const filterButtons = document.querySelectorAll(".filter-button");
+const clearCompletedButton = document.querySelector("#clear-completed");
 
 if (taskForm && taskInput && taskList && taskFilters) {
   taskForm.addEventListener("submit", handleTaskSubmit);
   taskList.addEventListener("change", handleTaskToggle);
   taskList.addEventListener("click", handleTaskDelete);
   taskFilters.addEventListener("click", handleFilterChange);
+  if (clearCompletedButton) {
+    clearCompletedButton.addEventListener("click", handleClearCompleted);
+  }
   updateFilterButtons();
   renderTasks();
 }
@@ -44,6 +48,7 @@ function createTask(title) {
 
 function renderTasks() {
   taskList.innerHTML = "";
+  updateClearCompletedButton();
   const visibleTasks = getVisibleTasks();
 
   if (visibleTasks.length === 0) {
@@ -142,6 +147,16 @@ function handleTaskDelete(event) {
   renderTasks();
 }
 
+function handleClearCompleted() {
+  const completedCount = getCompletedTaskCount();
+  if (completedCount === 0) {
+    return;
+  }
+
+  state.tasks = state.tasks.filter((task) => !task.completed);
+  renderTasks();
+}
+
 function handleFilterChange(event) {
   const clickedElement = event.target;
   if (!(clickedElement instanceof HTMLElement)) {
@@ -192,6 +207,24 @@ function updateFilterButtons() {
     const isCurrent = button.dataset.filter === state.filter;
     button.classList.toggle("is-active", isCurrent);
   });
+}
+
+function updateClearCompletedButton() {
+  if (!clearCompletedButton) {
+    return;
+  }
+
+  const completedCount = getCompletedTaskCount();
+  clearCompletedButton.disabled = completedCount === 0;
+  clearCompletedButton.textContent = completedCount > 0
+    ? `Clear completed (${completedCount})`
+    : "Clear completed";
+}
+
+function getCompletedTaskCount() {
+  return state.tasks.reduce((count, task) => {
+    return task.completed ? count + 1 : count;
+  }, 0);
 }
 
 function isSupportedFilter(value) {
